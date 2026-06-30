@@ -4,12 +4,14 @@ from sqlalchemy.orm import Session
 from pypdf import PdfReader
 from database import Documento, Entidad, crear_tablas, get_db
 from entidades import extraer_entidades
+from buscador import crear_indice, agregar_documento, buscar
 import io
 import os
 
 app = FastAPI()
 
 crear_tablas()
+crear_indice()
 
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -42,6 +44,7 @@ async def subir_pdf(archivo: UploadFile = File(...), db: Session = Depends(get_d
         )
         db.add(entidad)
     db.commit()
+    agregar_documento(documento.id, documento.nombre, texto)
     return {
         "id": documento.id,
         "nombre": documento.nombre,
@@ -58,3 +61,8 @@ def listar_documentos(db: Session = Depends(get_db)):
 def ver_entidades(id: int, db: Session = Depends(get_db)):
     entidades = db.query(Entidad).filter(Entidad.documento_id == id).all()
     return [{"texto": e.texto, "tipo": e.tipo} for e in entidades]
+
+@app.get("/buscar")
+def buscar_documentos(q: str):
+    resultados = buscar(q)
+    return resultados

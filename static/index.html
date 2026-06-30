@@ -3,139 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LINC</title>
+    <title>LINC - Laboratorio de Inteligencia</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; }
-        header { background: #1a1d27; padding: 20px 40px; border-bottom: 1px solid #2a2d3a; display: flex; align-items: center; gap: 12px; }
-        header h1 { font-size: 24px; color: #4ade80; letter-spacing: 2px; }
-        header span { color: #6b7280; font-size: 13px; }
-        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
-        .card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
-        .card h2 { font-size: 16px; color: #4ade80; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
-        .upload-area { border: 2px dashed #2a2d3a; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
-        .upload-area:hover { border-color: #4ade80; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #e0e0e0; }
+        header { background: #111; padding: 20px 40px; border-bottom: 2px solid #cc0000; display: flex; align-items: center; gap: 16px; }
+        header h1 { font-size: 28px; color: #ffffff; letter-spacing: 6px; font-weight: 800; }
+        header span { color: #cc0000; }
+        header p { color: #666; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+        .container { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
+        .card { background: #111; border-radius: 4px; padding: 28px; margin-bottom: 24px; border: 1px solid #222; }
+        .card h2 { font-size: 12px; color: #cc0000; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px; font-weight: 700; border-left: 3px solid #cc0000; padding-left: 10px; }
+        .upload-area { border: 1px dashed #333; border-radius: 4px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.3s; }
+        .upload-area:hover { border-color: #cc0000; }
         .upload-area input { display: none; }
-        .upload-area label { cursor: pointer; color: #6b7280; }
-        .upload-area label span { color: #4ade80; }
-        .btn { background: #4ade80; color: #0f1117; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: opacity 0.2s; }
-        .btn:hover { opacity: 0.85; }
-        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .resultado { margin-top: 16px; padding: 16px; background: #0f1117; border-radius: 8px; display: none; }
-        .tag { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; margin: 3px; }
-        .tag.PER { background: #1e3a5f; color: #60a5fa; }
-        .tag.ORG { background: #3b1f5e; color: #c084fc; }
-        .tag.LOC { background: #1f3b2e; color: #4ade80; }
-        .tag.MISC { background: #3b2e1f; color: #fb923c; }
-        table { width: 100%; border-collapse: collapse; }
-        table th { text-align: left; padding: 10px; color: #6b7280; font-size: 13px; border-bottom: 1px solid #2a2d3a; }
-        table td { padding: 10px; font-size: 14px; border-bottom: 1px solid #1a1d27; }
-        .loading { color: #6b7280; font-size: 14px; }
-        #nombre-archivo { margin-top: 8px; color: #4ade80; font-size: 13px; }
+        .upload-area p { color: #555; margin-top: 8px; font-size: 13px; }
+        .upload-area .icono { font-size: 32px; margin-bottom: 8px; }
+        .btn { background: #cc0000; color: #fff; border: none; padding: 12px 28px; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.2s; margin-top: 12px; letter-spacing: 1px; text-transform: uppercase; }
+        .btn:hover { background: #aa0000; }
+        .btn:disabled { background: #222; color: #444; cursor: not-allowed; }
+        .btn-secundario { background: transparent; color: #cc0000; border: 1px solid #cc0000; padding: 7px 16px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; }
+        .btn-secundario:hover { background: #cc0000; color: #fff; }
+        .resultado { background: #0d0d0d; border-radius: 4px; padding: 20px; margin-top: 16px; display: none; border: 1px solid #222; }
+        .resultado h3 { color: #fff; margin-bottom: 12px; font-size: 13px; letter-spacing: 1px; }
+        .stat { display: inline-block; background: #111; border-radius: 4px; padding: 12px 24px; margin: 6px; text-align: center; border: 1px solid #222; }
+        .stat .numero { font-size: 32px; color: #cc0000; font-weight: 800; }
+        .stat .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        .entidades-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+        .tag { padding: 3px 10px; border-radius: 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
+        .tag.PER { background: #0d1a2a; color: #4a9eff; border: 1px solid #1a3a5a; }
+        .tag.ORG { background: #1a0d00; color: #ff8c42; border: 1px solid #3a1a00; }
+        .tag.LOC { background: #0d1a0d; color: #4aff7a; border: 1px solid #1a3a1a; }
+        .tag.MISC { background: #1a0d1a; color: #cc88ff; border: 1px solid #3a1a3a; }
+        .doc-list { list-style: none; }
+        .doc-list li { padding: 14px 16px; border-bottom: 1px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
+        .doc-list li:last-child { border-bottom: none; }
+        .doc-list li:hover { background: #0d0d0d; }
+        .doc-nombre { color: #e0e0e0; font-size: 14px; }
+        .doc-meta { color: #555; font-size: 12px; }
+        .loading { color: #cc0000; font-size: 13px; margin-top: 10px; display: none; letter-spacing: 1px; }
+        #nombre-archivo { color: #cc0000; font-weight: 600; margin-top: 8px; font-size: 13px; }
+        .search-box { display: flex; gap: 12px; margin-bottom: 16px; }
+        .search-box input { flex: 1; background: #0d0d0d; border: 1px solid #333; border-radius: 4px; padding: 12px 16px; color: #e0e0e0; font-size: 14px; outline: none; }
+        .search-box input:focus { border-color: #cc0000; }
+        .search-box input::placeholder { color: #444; }
+        .search-box button { background: #cc0000; color: #fff; border: none; padding: 12px 24px; border-radius: 4px; font-weight: 700; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; font-size: 12px; }
+        .search-box button:hover { background: #aa0000; }
+        .search-resultado { background: #0d0d0d; border-radius: 4px; padding: 16px; margin-bottom: 10px; border-left: 3px solid #cc0000; }
+        .search-resultado .doc-titulo { color: #cc0000; font-size: 12px; margin-bottom: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+        .search-resultado .fragmento { color: #999; font-size: 13px; line-height: 1.7; }
+        .search-resultado .fragmento b { color: #fff; background: #330000; padding: 1px 4px; border-radius: 2px; }
+        .sin-resultados { color: #555; font-size: 14px; text-align: center; padding: 24px; }
+        .panel-entidades { background: #111; border-radius: 4px; padding: 24px; margin-top: 0; display: none; border: 1px solid #cc0000; margin-bottom: 24px; }
+        .panel-entidades h3 { color: #cc0000; margin-bottom: 16px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+        .divider { height: 1px; background: #1a1a1a; margin: 4px 0; }
     </style>
 </head>
 <body>
     <header>
-        <h1>LINC</h1>
-        <span>Laboratorio de Inteligencia y Ciberinteligencia</span>
+        <div>
+            <h1>LI<span>N</span>C</h1>
+            <p>Laboratorio de Inteligencia y Ciberinteligencia</p>
+        </div>
     </header>
 
     <div class="container">
+
+        <div class="card">
+            <h2>Buscar en Documentos</h2>
+            <div class="search-box">
+                <input type="text" id="input-busqueda" placeholder="Escribí una palabra o frase..." onkeydown="if(event.key==='Enter') buscarTexto()">
+                <button onclick="buscarTexto()">Buscar</button>
+            </div>
+            <div id="resultados-busqueda"></div>
+        </div>
+
         <div class="card">
             <h2>Subir Documento</h2>
             <div class="upload-area" onclick="document.getElementById('archivo').click()">
-                <input type="file" id="archivo" accept=".pdf" onchange="mostrarNombre()">
-                <label>Arrastrá un PDF o hacé clic para <span>seleccionar un archivo</span></label>
+                <div class="icono">📄</div>
+                <label>Hacé clic para seleccionar un PDF</label>
+                <input type="file" id="archivo" accept=".pdf" onchange="mostrarNombre(this)">
+                <p>Solo archivos PDF</p>
                 <div id="nombre-archivo"></div>
             </div>
             <br>
             <button class="btn" id="btn-subir" onclick="subirPDF()" disabled>Analizar documento</button>
-            <div class="resultado" id="resultado-subida"></div>
+            <div class="loading" id="loading">⏳ Analizando y extrayendo entidades...</div>
+            <div class="resultado" id="resultado">
+                <h3>Resultado del análisis</h3>
+                <div id="stats"></div>
+                <div class="entidades-grid" id="entidades"></div>
+            </div>
         </div>
 
         <div class="card">
             <h2>Documentos Analizados</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Páginas</th>
-                        <th>Entidades</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-documentos">
-                    <tr><td colspan="5" class="loading">Cargando...</td></tr>
-                </tbody>
-            </table>
+            <ul class="doc-list" id="doc-list">
+                <li><span class="doc-meta">Cargando...</span></li>
+            </ul>
         </div>
 
-        <div class="card" id="card-entidades" style="display:none">
-            <h2 id="titulo-entidades">Entidades</h2>
-            <div id="lista-entidades"></div>
+        <div class="panel-entidades" id="panel-entidades">
+            <h3 id="titulo-panel"></h3>
+            <div class="entidades-grid" id="entidades-panel"></div>
         </div>
+
     </div>
 
     <script>
-        function mostrarNombre() {
-            const archivo = document.getElementById('archivo').files[0];
-            if (archivo) {
-                document.getElementById('nombre-archivo').textContent = archivo.name;
-                document.getElementById('btn-subir').disabled = false;
-            }
+        function mostrarNombre(input) {
+            const nombre = input.files[0]?.name || '';
+            document.getElementById('nombre-archivo').textContent = nombre;
+            document.getElementById('btn-subir').disabled = !nombre;
         }
 
         async function subirPDF() {
             const archivo = document.getElementById('archivo').files[0];
             if (!archivo) return;
-            const btn = document.getElementById('btn-subir');
-            btn.disabled = true;
-            btn.textContent = 'Analizando...';
             const formData = new FormData();
             formData.append('archivo', archivo);
+            document.getElementById('btn-subir').disabled = true;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultado').style.display = 'none';
             try {
                 const res = await fetch('/subir-pdf', { method: 'POST', body: formData });
                 const data = await res.json();
-                const div = document.getElementById('resultado-subida');
-                div.style.display = 'block';
-                div.innerHTML = `✅ <strong>${data.nombre}</strong> — ${data.paginas} páginas — <strong>${data.entidades_guardadas}</strong> entidades detectadas`;
+                mostrarResultado(data);
                 cargarDocumentos();
             } catch (e) {
                 alert('Error al subir el archivo');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('btn-subir').disabled = false;
             }
-            btn.disabled = false;
-            btn.textContent = 'Analizar documento';
+        }
+
+        async function mostrarResultado(data) {
+            const res = await fetch(`/documentos/${data.id}/entidades`);
+            const entidades = await res.json();
+            document.getElementById('stats').innerHTML = `
+                <div class="stat"><div class="numero">${data.paginas}</div><div class="label">Páginas</div></div>
+                <div class="stat"><div class="numero">${data.entidades_guardadas}</div><div class="label">Entidades</div></div>
+            `;
+            document.getElementById('entidades').innerHTML =
+                entidades.slice(0, 40).map(e =>
+                    `<span class="tag ${e.tipo}">${e.texto} <small>${e.tipo}</small></span>`
+                ).join('');
+            document.getElementById('resultado').style.display = 'block';
         }
 
         async function cargarDocumentos() {
             const res = await fetch('/documentos');
             const docs = await res.json();
-            const tbody = document.getElementById('tabla-documentos');
-            if (docs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="loading">No hay documentos aún</td></tr>';
-                return;
-            }
-            tbody.innerHTML = docs.map(d => `
-                <tr>
-                    <td>${d.id}</td>
-                    <td>${d.nombre}</td>
-                    <td>${d.paginas}</td>
-                    <td>${d.total_entidades}</td>
-                    <td><button class="btn" onclick="verEntidades(${d.id}, '${d.nombre}')">Ver entidades</button></td>
-                </tr>
-            `).join('');
+            document.getElementById('doc-list').innerHTML = docs.length
+                ? docs.map(d => `
+                    <li>
+                        <span class="doc-nombre">📄 ${d.nombre}</span>
+                        <span class="doc-meta">${d.paginas} págs · ${d.total_entidades} entidades</span>
+                        <button class="btn-secundario" onclick="verEntidades(${d.id}, '${d.nombre}')">Ver entidades</button>
+                    </li>`).join('')
+                : '<li><span class="doc-meta">No hay documentos todavía</span></li>';
         }
 
         async function verEntidades(id, nombre) {
             const res = await fetch(`/documentos/${id}/entidades`);
             const entidades = await res.json();
-            document.getElementById('titulo-entidades').textContent = `Entidades — ${nombre}`;
-            document.getElementById('lista-entidades').innerHTML = entidades.map(e =>
-                `<span class="tag ${e.tipo}">${e.texto} <small>${e.tipo}</small></span>`
-            ).join('');
-            document.getElementById('card-entidades').style.display = 'block';
-            document.getElementById('card-entidades').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('titulo-panel').textContent = nombre;
+            document.getElementById('entidades-panel').innerHTML =
+                entidades.map(e =>
+                    `<span class="tag ${e.tipo}">${e.texto} <small>${e.tipo}</small></span>`
+                ).join('');
+            document.getElementById('panel-entidades').style.display = 'block';
+            document.getElementById('panel-entidades').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function buscarTexto() {
+            const q = document.getElementById('input-busqueda').value.trim();
+            if (!q) return;
+            const res = await fetch(`/buscar?q=${encodeURIComponent(q)}`);
+            const resultados = await res.json();
+            const contenedor = document.getElementById('resultados-busqueda');
+            if (resultados.length === 0) {
+                contenedor.innerHTML = '<div class="sin-resultados">No se encontraron resultados.</div>';
+            } else {
+                contenedor.innerHTML = resultados.map(r => `
+                    <div class="search-resultado">
+                        <div class="doc-titulo">📄 ${r.nombre}</div>
+                        <div class="fragmento">${r.fragmento}</div>
+                    </div>
+                `).join('');
+            }
         }
 
         cargarDocumentos();
