@@ -66,3 +66,27 @@ def ver_entidades(id: int, db: Session = Depends(get_db)):
 def buscar_documentos(q: str):
     resultados = buscar(q)
     return resultados
+
+@app.delete("/documentos/{id}")
+def eliminar_documento(id: int, db: Session = Depends(get_db)):
+    documento = db.query(Documento).filter(Documento.id == id).first()
+    if not documento:
+        return {"error": "Documento no encontrado"}
+    db.query(Entidad).filter(Entidad.documento_id == id).delete()
+    db.delete(documento)
+    db.commit()
+    return {"mensaje": f"Documento {id} eliminado correctamente"}
+
+@app.get("/estadisticas")
+def estadisticas(db: Session = Depends(get_db)):
+    total_docs = db.query(Documento).count()
+    total_entidades = db.query(Entidad).count()
+    por_tipo = {}
+    entidades = db.query(Entidad).all()
+    for e in entidades:
+        por_tipo[e.tipo] = por_tipo.get(e.tipo, 0) + 1
+    return {
+        "total_documentos": total_docs,
+        "total_entidades": total_entidades,
+        "por_tipo": por_tipo
+    }

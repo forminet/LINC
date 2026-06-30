@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LINC - Laboratorio de Inteligencia</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #e0e0e0; }
@@ -24,9 +25,11 @@
         .btn:disabled { background: #222; color: #444; cursor: not-allowed; }
         .btn-secundario { background: transparent; color: #cc0000; border: 1px solid #cc0000; padding: 7px 16px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; }
         .btn-secundario:hover { background: #cc0000; color: #fff; }
+        .btn-eliminar { background: transparent; color: #666; border: 1px solid #333; padding: 7px 16px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; margin-left: 8px; }
+        .btn-eliminar:hover { background: #cc0000; color: #fff; border-color: #cc0000; }
         .resultado { background: #0d0d0d; border-radius: 4px; padding: 20px; margin-top: 16px; display: none; border: 1px solid #222; }
         .resultado h3 { color: #fff; margin-bottom: 12px; font-size: 13px; letter-spacing: 1px; }
-        .stat { display: inline-block; background: #111; border-radius: 4px; padding: 12px 24px; margin: 6px; text-align: center; border: 1px solid #222; }
+        .stat { display: inline-block; background: #0d0d0d; border-radius: 4px; padding: 12px 24px; margin: 6px; text-align: center; border: 1px solid #222; }
         .stat .numero { font-size: 32px; color: #cc0000; font-weight: 800; }
         .stat .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
         .entidades-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
@@ -54,9 +57,8 @@
         .search-resultado .fragmento { color: #999; font-size: 13px; line-height: 1.7; }
         .search-resultado .fragmento b { color: #fff; background: #330000; padding: 1px 4px; border-radius: 2px; }
         .sin-resultados { color: #555; font-size: 14px; text-align: center; padding: 24px; }
-        .panel-entidades { background: #111; border-radius: 4px; padding: 24px; margin-top: 0; display: none; border: 1px solid #cc0000; margin-bottom: 24px; }
+        .panel-entidades { background: #111; border-radius: 4px; padding: 24px; display: none; border: 1px solid #cc0000; margin-bottom: 24px; }
         .panel-entidades h3 { color: #cc0000; margin-bottom: 16px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
-        .divider { height: 1px; background: #1a1a1a; margin: 4px 0; }
     </style>
 </head>
 <body>
@@ -68,6 +70,12 @@
     </header>
 
     <div class="container">
+
+        <div class="card">
+            <h2>Dashboard</h2>
+            <div id="dashboard-stats" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;"></div>
+            <canvas id="grafico-tipos" height="80"></canvas>
+        </div>
 
         <div class="card">
             <h2>Buscar en Documentos</h2>
@@ -131,6 +139,7 @@
                 const data = await res.json();
                 mostrarResultado(data);
                 cargarDocumentos();
+                cargarDashboard();
             } catch (e) {
                 alert('Error al subir el archivo');
             } finally {
@@ -161,7 +170,10 @@
                     <li>
                         <span class="doc-nombre">📄 ${d.nombre}</span>
                         <span class="doc-meta">${d.paginas} págs · ${d.total_entidades} entidades</span>
-                        <button class="btn-secundario" onclick="verEntidades(${d.id}, '${d.nombre}')">Ver entidades</button>
+                        <div>
+                            <button class="btn-secundario" onclick="verEntidades(${d.id}, '${d.nombre}')">Ver entidades</button>
+                            <button class="btn-eliminar" onclick="eliminarDocumento(${d.id})">✕ Eliminar</button>
+                        </div>
                     </li>`).join('')
                 : '<li><span class="doc-meta">No hay documentos todavía</span></li>';
         }
@@ -176,6 +188,14 @@
                 ).join('');
             document.getElementById('panel-entidades').style.display = 'block';
             document.getElementById('panel-entidades').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function eliminarDocumento(id) {
+            if (!confirm('¿Seguro que querés eliminar este documento?')) return;
+            await fetch(`/documentos/${id}`, { method: 'DELETE' });
+            cargarDocumentos();
+            cargarDashboard();
+            document.getElementById('panel-entidades').style.display = 'none';
         }
 
         async function buscarTexto() {
@@ -196,7 +216,39 @@
             }
         }
 
+        async function cargarDashboard() {
+            const res = await fetch('/estadisticas');
+            const data = await res.json();
+            document.getElementById('dashboard-stats').innerHTML = `
+                <div class="stat"><div class="numero">${data.total_documentos}</div><div class="label">Documentos</div></div>
+                <div class="stat"><div class="numero">${data.total_entidades}</div><div class="label">Entidades totales</div></div>
+            `;
+            const tipos = data.por_tipo;
+            const ctx = document.getElementById('grafico-tipos').getContext('2d');
+            if (window.graficotipos) window.graficotipos.destroy();
+            window.graficotipos = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(tipos),
+                    datasets: [{
+                        label: 'Entidades por tipo',
+                        data: Object.values(tipos),
+                        backgroundColor: ['#4a9eff','#ff8c42','#4aff7a','#cc88ff','#cc0000'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#888' }, grid: { color: '#1a1a1a' } },
+                        y: { ticks: { color: '#888' }, grid: { color: '#1a1a1a' } }
+                    }
+                }
+            });
+        }
+
         cargarDocumentos();
+        cargarDashboard();
     </script>
 </body>
 </html>
