@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text
+from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 
 DATABASE_URL = "sqlite:///./linc.db"
 
@@ -14,6 +14,15 @@ class Documento(Base):
     nombre = Column(String, index=True)
     paginas = Column(Integer)
     texto = Column(Text)
+    entidades = relationship("Entidad", back_populates="documento")
+
+class Entidad(Base):
+    __tablename__ = "entidades"
+    id = Column(Integer, primary_key=True, index=True)
+    texto = Column(String, index=True)
+    tipo = Column(String)
+    documento_id = Column(Integer, ForeignKey("documentos.id"))
+    documento = relationship("Documento", back_populates="entidades")
 
 def crear_tablas():
     Base.metadata.create_all(bind=engine)

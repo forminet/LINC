@@ -1,13 +1,18 @@
 from fastapi import FastAPI, UploadFile, File, Depends
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from pypdf import PdfReader
-from database import Documento, crear_tablas, get_db
+from database import Documento, Entidad, crear_tablas, get_db
 from entidades import extraer_entidades
 import io
+import os
 
 app = FastAPI()
 
 crear_tablas()
+
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 def inicio():
@@ -28,17 +33,28 @@ async def subir_pdf(archivo: UploadFile = File(...), db: Session = Depends(get_d
     db.add(documento)
     db.commit()
     db.refresh(documento)
-    entidades = extraer_entidades(texto)
+    entidades_extraidas = extraer_entidades(texto)
+    for e in entidades_extraidas:
+        entidad = Entidad(
+            texto=e["texto"],
+            tipo=e["tipo"],
+            documento_id=documento.id
+        )
+        db.add(entidad)
+    db.commit()
     return {
         "id": documento.id,
         "nombre": documento.nombre,
         "paginas": documento.paginas,
-        "texto_preview": documento.texto[:300],
-        "entidades_encontradas": len(entidades),
-        "entidades": entidades[:20]
+        "entidades_guardadas": len(entidades_extraidas)
     }
 
 @app.get("/documentos")
 def listar_documentos(db: Session = Depends(get_db)):
     documentos = db.query(Documento).all()
-    return [{"id": d.id, "nombre": d.nombre, "paginas": d.paginas} for d in documentos]
+    return [{"id": d.id, "nombre": d.nombre, "paginas": d.paginas, "total_entidades": len(d.entidades)} for d in documentos]
+
+@app.get("/documentos/{id}/entidades")
+def ver_entidades(id: int, db: Session = Depends(get_db)):
+    entidades = db.query(Entidad).filter(Entidad.documento_id == id).all()
+    return [{"texto": e.texto, "tipo": e.tipo} for e in entidades]
