@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINC</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; }
+        header { background: #1a1d27; padding: 20px 40px; border-bottom: 1px solid #2a2d3a; display: flex; align-items: center; gap: 12px; }
+        header h1 { font-size: 24px; color: #4ade80; letter-spacing: 2px; }
+        header span { color: #6b7280; font-size: 13px; }
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+        .card h2 { font-size: 16px; color: #4ade80; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        .upload-area { border: 2px dashed #2a2d3a; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+        .upload-area:hover { border-color: #4ade80; }
+        .upload-area input { display: none; }
+        .upload-area label { cursor: pointer; color: #6b7280; }
+        .upload-area label span { color: #4ade80; }
+        .btn { background: #4ade80; color: #0f1117; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.85; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .resultado { margin-top: 16px; padding: 16px; background: #0f1117; border-radius: 8px; display: none; }
+        .tag { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; margin: 3px; }
+        .tag.PER { background: #1e3a5f; color: #60a5fa; }
+        .tag.ORG { background: #3b1f5e; color: #c084fc; }
+        .tag.LOC { background: #1f3b2e; color: #4ade80; }
+        .tag.MISC { background: #3b2e1f; color: #fb923c; }
+        table { width: 100%; border-collapse: collapse; }
+        table th { text-align: left; padding: 10px; color: #6b7280; font-size: 13px; border-bottom: 1px solid #2a2d3a; }
+        table td { padding: 10px; font-size: 14px; border-bottom: 1px solid #1a1d27; }
+        .loading { color: #6b7280; font-size: 14px; }
+        #nombre-archivo { margin-top: 8px; color: #4ade80; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>LINC</h1>
+        <span>Laboratorio de Inteligencia y Ciberinteligencia</span>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2>Subir Documento</h2>
+            <div class="upload-area" onclick="document.getElementById('archivo').click()">
+                <input type="file" id="archivo" accept=".pdf" onchange="mostrarNombre()">
+                <label>Arrastrá un PDF o hacé clic para <span>seleccionar un archivo</span></label>
+                <div id="nombre-archivo"></div>
+            </div>
+            <br>
+            <button class="btn" id="btn-subir" onclick="subirPDF()" disabled>Analizar documento</button>
+            <div class="resultado" id="resultado-subida"></div>
+        </div>
+
+        <div class="card">
+            <h2>Documentos Analizados</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Páginas</th>
+                        <th>Entidades</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-documentos">
+                    <tr><td colspan="5" class="loading">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card" id="card-entidades" style="display:none">
+            <h2 id="titulo-entidades">Entidades</h2>
+            <div id="lista-entidades"></div>
+        </div>
+    </div>
+
+    <script>
+        function mostrarNombre() {
+            const archivo = document.getElementById('archivo').files[0];
+            if (archivo) {
+                document.getElementById('nombre-archivo').textContent = archivo.name;
+                document.getElementById('btn-subir').disabled = false;
+            }
+        }
+
+        async function subirPDF() {
+            const archivo = document.getElementById('archivo').files[0];
+            if (!archivo) return;
+            const btn = document.getElementById('btn-subir');
+            btn.disabled = true;
+            btn.textContent = 'Analizando...';
+            const formData = new FormData();
+            formData.append('archivo', archivo);
+            try {
+                const res = await fetch('/subir-pdf', { method: 'POST', body: formData });
+                const data = await res.json();
+                const div = document.getElementById('resultado-subida');
+                div.style.display = 'block';
+                div.innerHTML = `✅ <strong>${data.nombre}</strong> — ${data.paginas} páginas — <strong>${data.entidades_guardadas}</strong> entidades detectadas`;
+                cargarDocumentos();
+            } catch (e) {
+                alert('Error al subir el archivo');
+            }
+            btn.disabled = false;
+            btn.textContent = 'Analizar documento';
+        }
+
+        async function cargarDocumentos() {
+            const res = await fetch('/documentos');
+            const docs = await res.json();
+            const tbody = document.getElementById('tabla-documentos');
+            if (docs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">No hay documentos aún</td></tr>';
+                return;
+            }
+            tbody.innerHTML = docs.map(d => `
+                <tr>
+                    <td>${d.id}</td>
+                    <td>${d.nombre}</td>
+                    <td>${d.paginas}</td>
+                    <td>${d.total_entidades}</td>
+                    <td><button class="btn" onclick="verEntidades(${d.id}, '${d.nombre}')">Ver entidades</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function verEntidades(id, nombre) {
+            const res = await fetch(`/documentos/${id}/entidades`);
+            const entidades = await res.json();
+            document.getElementById('titulo-entidades').textContent = `Entidades — ${nombre}`;
+            document.getElementById('lista-entidades').innerHTML = entidades.map(e =>
+                `<span class="tag ${e.tipo}">${e.texto} <small>${e.tipo}</small></span>`
+            ).join('');
+            document.getElementById('card-entidades').style.display = 'block';
+            document.getElementById('card-entidades').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        cargarDocumentos();
+    </script>
+</body>
+</html>
