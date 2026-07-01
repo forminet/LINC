@@ -1,5 +1,16 @@
+version: '3.8'
+
 services:
-  # Base de datos de Grafos
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=sqlite:///./linc.db
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
   neo4j:
     image: neo4j:5.15-community
     ports:
@@ -8,9 +19,8 @@ services:
     environment:
       - NEO4J_AUTH=neo4j/password123
     volumes:
-      - ./data/neo4j:/data
+      - neo4j_data:/data
 
-  # Base de datos Relacional
   postgres:
     image: postgres:16-alpine
     ports:
@@ -20,22 +30,13 @@ services:
       - POSTGRES_PASSWORD=linc_password
       - POSTGRES_DB=linc_db
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
-  # Caché
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
 
-  # Tu microservicio de API (Asegúrate de que esté bajo el mismo "services:")
-  api:
-    build: ./src/api
-    ports:
-      - "8000:8000"
-    depends_on:
-      - neo4j
-      - postgres
-      - redis
-    volumes:
-      - ./src/api:/app
+volumes:
+  neo4j_data:
+  postgres_data:
