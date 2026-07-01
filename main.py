@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from pypdf import PdfReader
 from database import Documento, Entidad, crear_tablas, get_db
-from entidades import extraer_entidades
+# from entidades import extraer_entidades
 from buscador import crear_indice, agregar_documento, buscar
 import io
 import os
@@ -35,16 +35,9 @@ async def subir_pdf(archivo: UploadFile = File(...), db: Session = Depends(get_d
     db.add(documento)
     db.commit()
     db.refresh(documento)
-    entidades_extraidas = extraer_entidades(texto)
-    for e in entidades_extraidas:
-        entidad = Entidad(
-            texto=e["texto"],
-            tipo=e["tipo"],
-            documento_id=documento.id
-        )
-        db.add(entidad)
-    db.commit()
-    agregar_documento(documento.id, documento.nombre, texto)
+    # Extraccion de entidades deshabilitada temporalmente en esta máquina
+    entidades_extraidas = []
+    agregar_documento(documento.id, documento.nombre, texto) # type: ignore
     return {
         "id": documento.id,
         "nombre": documento.nombre,
@@ -90,3 +83,10 @@ def estadisticas(db: Session = Depends(get_db)):
         "total_entidades": total_entidades,
         "por_tipo": por_tipo
     }
+@app.get("/osint")
+def obtener_osint(terminos: str):
+    """Recopila información OSINT sobre términos separados por comas"""
+    from osint import recopilar_osint
+    lista_terminos = [t.strip() for t in terminos.split(",")]
+    resultado = recopilar_osint(lista_terminos)
+    return resultado
