@@ -1,254 +1,381 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LINC - Laboratorio de Inteligencia</title>
+    <title>LINC - Inteligencia Global</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <style>
+        /* ==========================================================================
+           VARIABLES DE TEMA (CLARO / OSCURO)
+           ========================================================================== */
+        :root {
+            /* Tema Oscuro (Por Defecto) */
+            --bg-body: #0a0a0a;
+            --bg-header: #111111;
+            --bg-card: #111111;
+            --bg-inner: #0d0d0d;
+            --text-main: #e0e0e0;
+            --text-muted: #888888;
+            --border-color: #222222;
+            --border-input: #333333;
+            --accent: #cc0000;
+            --accent-hover: #aa0000;
+        }
+
+        [data-theme="light"] {
+            /* Tema Claro */
+            --bg-body: #eef2f5;
+            --bg-header: #ffffff;
+            --bg-card: #ffffff;
+            --bg-inner: #f8fafc;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #d1d5db;
+            --border-input: #d1d5db;
+            --accent: #cc0000;
+            --accent-hover: #aa0000;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #e0e0e0; }
-        header { background: #111; padding: 20px 40px; border-bottom: 2px solid #cc0000; display: flex; align-items: center; gap: 16px; }
-        header h1 { font-size: 28px; color: #ffffff; letter-spacing: 6px; font-weight: 800; }
-        header span { color: #cc0000; }
-        header p { color: #666; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
-        .container { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
-        .card { background: #111; border-radius: 4px; padding: 28px; margin-bottom: 24px; border: 1px solid #222; }
-        .card h2 { font-size: 12px; color: #cc0000; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px; font-weight: 700; border-left: 3px solid #cc0000; padding-left: 10px; }
-        .upload-area { border: 1px dashed #333; border-radius: 4px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.3s; }
-        .upload-area:hover { border-color: #cc0000; }
-        .upload-area input { display: none; }
-        .upload-area p { color: #555; margin-top: 8px; font-size: 13px; }
-        .upload-area .icono { font-size: 32px; margin-bottom: 8px; }
-        .btn { background: #cc0000; color: #fff; border: none; padding: 12px 28px; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.2s; margin-top: 12px; letter-spacing: 1px; text-transform: uppercase; }
-        .btn:hover { background: #aa0000; }
-        .btn:disabled { background: #222; color: #444; cursor: not-allowed; }
-        .btn-secundario { background: transparent; color: #cc0000; border: 1px solid #cc0000; padding: 7px 16px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; }
-        .btn-secundario:hover { background: #cc0000; color: #fff; }
-        .btn-eliminar { background: transparent; color: #666; border: 1px solid #333; padding: 7px 16px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; margin-left: 8px; }
-        .btn-eliminar:hover { background: #cc0000; color: #fff; border-color: #cc0000; }
-        .resultado { background: #0d0d0d; border-radius: 4px; padding: 20px; margin-top: 16px; display: none; border: 1px solid #222; }
-        .resultado h3 { color: #fff; margin-bottom: 12px; font-size: 13px; letter-spacing: 1px; }
-        .stat { display: inline-block; background: #0d0d0d; border-radius: 4px; padding: 12px 24px; margin: 6px; text-align: center; border: 1px solid #222; }
-        .stat .numero { font-size: 32px; color: #cc0000; font-weight: 800; }
-        .stat .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-        .entidades-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
-        .tag { padding: 3px 10px; border-radius: 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
-        .tag.PER { background: #0d1a2a; color: #4a9eff; border: 1px solid #1a3a5a; }
-        .tag.ORG { background: #1a0d00; color: #ff8c42; border: 1px solid #3a1a00; }
-        .tag.LOC { background: #0d1a0d; color: #4aff7a; border: 1px solid #1a3a1a; }
-        .tag.MISC { background: #1a0d1a; color: #cc88ff; border: 1px solid #3a1a3a; }
-        .doc-list { list-style: none; }
-        .doc-list li { padding: 14px 16px; border-bottom: 1px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
-        .doc-list li:last-child { border-bottom: none; }
-        .doc-list li:hover { background: #0d0d0d; }
-        .doc-nombre { color: #e0e0e0; font-size: 14px; }
-        .doc-meta { color: #555; font-size: 12px; }
-        .loading { color: #cc0000; font-size: 13px; margin-top: 10px; display: none; letter-spacing: 1px; }
-        #nombre-archivo { color: #cc0000; font-weight: 600; margin-top: 8px; font-size: 13px; }
-        .search-box { display: flex; gap: 12px; margin-bottom: 16px; }
-        .search-box input { flex: 1; background: #0d0d0d; border: 1px solid #333; border-radius: 4px; padding: 12px 16px; color: #e0e0e0; font-size: 14px; outline: none; }
-        .search-box input:focus { border-color: #cc0000; }
-        .search-box input::placeholder { color: #444; }
-        .search-box button { background: #cc0000; color: #fff; border: none; padding: 12px 24px; border-radius: 4px; font-weight: 700; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; font-size: 12px; }
-        .search-box button:hover { background: #aa0000; }
-        .search-resultado { background: #0d0d0d; border-radius: 4px; padding: 16px; margin-bottom: 10px; border-left: 3px solid #cc0000; }
-        .search-resultado .doc-titulo { color: #cc0000; font-size: 12px; margin-bottom: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-        .search-resultado .fragmento { color: #999; font-size: 13px; line-height: 1.7; }
-        .search-resultado .fragmento b { color: #fff; background: #330000; padding: 1px 4px; border-radius: 2px; }
-        .sin-resultados { color: #555; font-size: 14px; text-align: center; padding: 24px; }
-        .panel-entidades { background: #111; border-radius: 4px; padding: 24px; display: none; border: 1px solid #cc0000; margin-bottom: 24px; }
-        .panel-entidades h3 { color: #cc0000; margin-bottom: 16px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+        
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg-body); 
+            color: var(--text-main); 
+            height: 100vh; 
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* CUSTOM SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-card); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-input); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        /* HEADER & CONTROLES SUPERIORES */
+        header { 
+            background: var(--bg-header); 
+            padding: 15px 30px; 
+            border-bottom: 2px solid var(--accent); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-shrink: 0;
+            transition: background 0.3s;
+        }
+        header h1 { font-size: 24px; color: var(--text-main); letter-spacing: 6px; font-weight: 800; }
+        header span { color: var(--accent); }
+        header p { color: var(--text-muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+
+        .header-controls { display: flex; gap: 12px; align-items: center; }
+        .btn-icon { background: var(--bg-inner); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 700; transition: all 0.2s; }
+        .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+        .user-status { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+
+        /* LAYOUT PRINCIPAL */
+        .main-layout { 
+            flex: 1; 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+            padding: 20px; 
+            min-height: 0; 
+        }
+
+        .card { 
+            background: var(--bg-card); 
+            border-radius: 4px; 
+            padding: 20px; 
+            border: 1px solid var(--border-color); 
+            display: flex;
+            flex-direction: column;
+            min-height: 0; 
+            transition: background 0.3s, border-color 0.3s;
+        }
+        
+        .card h2 { 
+            font-size: 12px; color: var(--accent); margin-bottom: 15px; 
+            text-transform: uppercase; letter-spacing: 3px; 
+            font-weight: 700; border-left: 3px solid var(--accent); padding-left: 10px; 
+            flex-shrink: 0;
+        }
+
+        .card-mapa { height: 100%; }
+        #mapa { flex: 1; width: 100%; border-radius: 4px; border: 1px solid var(--border-color); z-index: 1; }
+
+        .panel-derecho { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 16px; height: 100%; min-height: 0; }
+
+        /* INTERFAZ INTERNA (Botones, Inputs, Listas) */
+        .categorias-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .categoria-btn { background: var(--bg-inner); border: 2px solid var(--border-input); color: var(--text-main); padding: 10px; border-radius: 4px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 700; text-transform: uppercase; transition: all 0.2s; }
+        .categoria-btn:hover { border-color: var(--accent); }
+        .categoria-btn.activo { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+        #dashboard-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .stat { background: var(--bg-inner); border-radius: 4px; padding: 10px; text-align: center; border: 1px solid var(--border-color); }
+        .stat .numero { font-size: 24px; color: var(--accent); font-weight: 800; line-height: 1; }
+        .stat .label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-top: 6px; }
+
+        .search-box { display: flex; gap: 8px; margin-bottom: 12px; flex-shrink: 0; }
+        .search-box input { flex: 1; background: var(--bg-inner); border: 1px solid var(--border-input); border-radius: 4px; padding: 10px; color: var(--text-main); font-size: 12px; outline: none; transition: background 0.3s; }
+        .search-box input:focus { border-color: var(--accent); }
+        .search-box button { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 4px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; }
+        .search-box button:hover { background: var(--accent-hover); }
+
+        #resultados-busqueda, #eventos-lista { flex: 1; overflow-y: auto; padding-right: 5px; }
+
+        .evento-item { background: var(--bg-inner); border-radius: 4px; padding: 10px; margin-bottom: 8px; border-left: 3px solid var(--accent); font-size: 11px; transition: background 0.3s; }
+        .evento-item .titulo { color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+        .evento-item .desc { color: var(--text-muted); line-height: 1.4; margin-bottom: 4px; }
+        .evento-item .meta { color: var(--text-muted); font-size: 9px; opacity: 0.8; }
+        .sin-datos { color: var(--text-muted); text-align: center; padding: 20px; font-size: 12px; }
+
+        /* ==========================================================================
+           MODAL DE AJUSTES & LOGIN
+           ========================================================================== */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-overlay.activo { display: flex; }
+        .modal-caja { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; width: 350px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-caja h3 { color: var(--accent); margin-bottom: 20px; text-transform: uppercase; font-size: 14px; letter-spacing: 2px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
+        
+        .ajuste-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .ajuste-item span { font-size: 12px; font-weight: 700; color: var(--text-main); text-transform: uppercase; }
+        
+        .input-login { width: 100%; background: var(--bg-inner); border: 1px solid var(--border-input); padding: 10px; color: var(--text-main); margin-bottom: 10px; border-radius: 4px; outline: none; font-size: 12px;}
+        .input-login:focus { border-color: var(--accent); }
+        .btn-full { width: 100%; background: var(--accent); color: #fff; border: none; padding: 12px; font-weight: 700; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-size: 11px; margin-top: 10px;}
+        .btn-full:hover { background: var(--accent-hover); }
+
+        .btn-cerrar-modal { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); width: 100%; padding: 10px; margin-top: 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .btn-cerrar-modal:hover { background: var(--bg-inner); }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            body { height: auto; overflow: visible; }
+            .main-layout { grid-template-columns: 1fr; min-height: 100vh; }
+            .panel-derecho { grid-template-columns: 1fr; grid-template-rows: auto; }
+            #mapa { height: 400px; flex: none; }
+            #resultados-busqueda, #eventos-lista { max-height: 300px; }
+        }
     </style>
 </head>
 <body>
     <header>
         <div>
             <h1>LI<span>N</span>C</h1>
-            <p>Laboratorio de Inteligencia y Ciberinteligencia</p>
+            <p>Plataforma Global de Inteligencia</p>
+        </div>
+        <div class="header-controls">
+            <span id="estado-usuario" class="user-status">Desconectado</span>
+            <button class="btn-icon" onclick="abrirModal()">⚙️ Ajustes</button>
         </div>
     </header>
 
-    <div class="container">
-
-        <div class="card">
-            <h2>Dashboard</h2>
-            <div id="dashboard-stats" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;"></div>
-            <canvas id="grafico-tipos" height="80"></canvas>
+    <div class="main-layout">
+        <!-- MAPA INTERACTIVO -->
+        <div class="card card-mapa">
+            <h2>Mapa de Eventos Globales</h2>
+            <div id="mapa"></div>
         </div>
 
-        <div class="card">
-            <h2>Buscar en Documentos</h2>
-            <div class="search-box">
-                <input type="text" id="input-busqueda" placeholder="Escribí una palabra o frase..." onkeydown="if(event.key==='Enter') buscarTexto()">
-                <button onclick="buscarTexto()">Buscar</button>
+        <!-- PANEL DERECHO -->
+        <div class="panel-derecho">
+            <div class="card">
+                <h2>Temas</h2>
+                <div class="categorias-grid">
+                    <button class="categoria-btn politica activo" onclick="filtrarPorCategoria('politica')">🏛️ Política</button>
+                    <button class="categoria-btn economia" onclick="filtrarPorCategoria('economia')">💼 Economía</button>
+                    <button class="categoria-btn belico" onclick="filtrarPorCategoria('belico')">⚔️ Bélico</button>
+                    <button class="categoria-btn social" onclick="filtrarPorCategoria('social')">👥 Social</button>
+                </div>
             </div>
-            <div id="resultados-busqueda"></div>
-        </div>
 
-        <div class="card">
-            <h2>Subir Documento</h2>
-            <div class="upload-area" onclick="document.getElementById('archivo').click()">
-                <div class="icono">📄</div>
-                <label>Hacé clic para seleccionar un PDF</label>
-                <input type="file" id="archivo" accept=".pdf" onchange="mostrarNombre(this)">
-                <p>Solo archivos PDF</p>
-                <div id="nombre-archivo"></div>
+            <div class="card">
+                <h2>Impacto</h2>
+                <div id="dashboard-stats"></div>
             </div>
-            <br>
-            <button class="btn" id="btn-subir" onclick="subirPDF()" disabled>Analizar documento</button>
-            <div class="loading" id="loading">⏳ Analizando y extrayendo entidades...</div>
-            <div class="resultado" id="resultado">
-                <h3>Resultado del análisis</h3>
-                <div id="stats"></div>
-                <div class="entidades-grid" id="entidades"></div>
+
+            <div class="card">
+                <h2>Inteligencia</h2>
+                <div class="search-box">
+                    <input type="text" id="input-busqueda" placeholder="Palabra clave..." onkeydown="if(event.key==='Enter') buscarTexto()">
+                    <button onclick="buscarTexto()">Buscar</button>
+                </div>
+                <div id="resultados-busqueda"></div>
+            </div>
+
+            <div class="card">
+                <h2>Feed Reciente</h2>
+                <div id="eventos-lista"></div>
             </div>
         </div>
+    </div>
 
-        <div class="card">
-            <h2>Documentos Analizados</h2>
-            <ul class="doc-list" id="doc-list">
-                <li><span class="doc-meta">Cargando...</span></li>
-            </ul>
+    <!-- MODAL DE AJUSTES Y SESIÓN -->
+    <div id="modal-ajustes" class="modal-overlay">
+        <div class="modal-caja">
+            <h3>⚙️ Panel de Control</h3>
+            
+            <div class="ajuste-item">
+                <span>Tema Visual</span>
+                <button class="btn-icon" id="btn-toggle-tema" onclick="alternarTema()">🌙 Cambiar a Claro</button>
+            </div>
+
+            <div id="seccion-login">
+                <h3 style="margin-top: 30px;">Acceso Operativo</h3>
+                <input type="text" id="user-input" class="input-login" placeholder="Usuario de Agente">
+                <input type="password" id="pass-input" class="input-login" placeholder="Clave de Acceso">
+                <button class="btn-full" onclick="iniciarSesion()">Iniciar Sesión</button>
+            </div>
+
+            <div id="seccion-logout" style="display: none;">
+                <h3 style="margin-top: 30px;">Sesión Activa</h3>
+                <button class="btn-full" style="background: var(--bg-inner); border: 1px solid var(--border-color); color: var(--text-main);" onclick="cerrarSesion()">Cerrar Sesión</button>
+            </div>
+
+            <button class="btn-cerrar-modal" onclick="cerrarModal()">Cerrar Panel</button>
         </div>
-
-        <div class="panel-entidades" id="panel-entidades">
-            <h3 id="titulo-panel"></h3>
-            <div class="entidades-grid" id="entidades-panel"></div>
-        </div>
-
     </div>
 
     <script>
-        function mostrarNombre(input) {
-            const nombre = input.files[0]?.name || '';
-            document.getElementById('nombre-archivo').textContent = nombre;
-            document.getElementById('btn-subir').disabled = !nombre;
+        // ESTADO GLOBAL
+        let isDarkMode = true;
+        let isLogged = false;
+        let mapa, capaMarcadores, capaBase;
+        let categoriaActual = "politica";
+        
+        const COLORES_CATEGORIA = {
+            politica: '#4a9eff', economia: '#ff8c42', belico: '#cc0000', social: '#4aff7a'
+        };
+
+        // --- SISTEMA DE MAPA ---
+        function inicializarMapa() {
+            mapa = L.map('mapa').setView([20, 0], 2);
+            capaMarcadores = L.layerGroup().addTo(mapa);
+            actualizarCapaMapa();
+            window.addEventListener('resize', () => { if (mapa) setTimeout(() => mapa.invalidateSize(), 200); });
         }
 
-        async function subirPDF() {
-            const archivo = document.getElementById('archivo').files[0];
-            if (!archivo) return;
-            const formData = new FormData();
-            formData.append('archivo', archivo);
-            document.getElementById('btn-subir').disabled = true;
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('resultado').style.display = 'none';
-            try {
-                const res = await fetch('/subir-pdf', { method: 'POST', body: formData });
-                const data = await res.json();
-                mostrarResultado(data);
-                cargarDocumentos();
-                cargarDashboard();
-            } catch (e) {
-                alert('Error al subir el archivo');
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('btn-subir').disabled = false;
-            }
+        function actualizarCapaMapa() {
+            if (capaBase) { mapa.removeLayer(capaBase); }
+            // Cambia el diseño del mapa dependiendo del tema de la página
+            const tileUrl = isDarkMode 
+                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+            
+            capaBase = L.tileLayer(tileUrl, { attribution: '© OSM', maxZoom: 19 }).addTo(mapa);
         }
 
-        async function mostrarResultado(data) {
-            const res = await fetch(`/documentos/${data.id}/entidades`);
-            const entidades = await res.json();
-            document.getElementById('stats').innerHTML = `
-                <div class="stat"><div class="numero">${data.paginas}</div><div class="label">Páginas</div></div>
-                <div class="stat"><div class="numero">${data.entidades_guardadas}</div><div class="label">Entidades</div></div>
-            `;
-            document.getElementById('entidades').innerHTML =
-                entidades.slice(0, 40).map(e =>
-                    `<span class="tag ${e.tipo}">${e.texto} <small>${e.tipo}</small></span>`
-                ).join('');
-            document.getElementById('resultado').style.display = 'block';
-        }
-
-        async function cargarDocumentos() {
-            const res = await fetch('/documentos');
-            const docs = await res.json();
-            document.getElementById('doc-list').innerHTML = docs.length
-                ? docs.map(d => `
-                    <li>
-                        <span class="doc-nombre">📄 ${d.nombre}</span>
-                        <span class="doc-meta">${d.paginas} págs · ${d.total_entidades} entidades</span>
-                        <div>
-                            <button class="btn-secundario" onclick="verEntidades(${d.id}, '${d.nombre}')">Ver entidades</button>
-                            <button class="btn-eliminar" onclick="eliminarDocumento(${d.id})">✕ Eliminar</button>
-                        </div>
-                    </li>`).join('')
-                : '<li><span class="doc-meta">No hay documentos todavía</span></li>';
-        }
-
-        async function verEntidades(id, nombre) {
-            const res = await fetch(`/documentos/${id}/entidades`);
-            const entidades = await res.json();
-            document.getElementById('titulo-panel').textContent = nombre;
-            document.getElementById('entidades-panel').innerHTML =
-                entidades.map(e =>
-                    `<span class="tag ${e.tipo}">${e.texto} <small>${e.tipo}</small></span>`
-                ).join('');
-            document.getElementById('panel-entidades').style.display = 'block';
-            document.getElementById('panel-entidades').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        async function eliminarDocumento(id) {
-            if (!confirm('¿Seguro que querés eliminar este documento?')) return;
-            await fetch(`/documentos/${id}`, { method: 'DELETE' });
-            cargarDocumentos();
-            cargarDashboard();
-            document.getElementById('panel-entidades').style.display = 'none';
-        }
-
-        async function buscarTexto() {
-            const q = document.getElementById('input-busqueda').value.trim();
-            if (!q) return;
-            const res = await fetch(`/buscar?q=${encodeURIComponent(q)}`);
-            const resultados = await res.json();
-            const contenedor = document.getElementById('resultados-busqueda');
-            if (resultados.length === 0) {
-                contenedor.innerHTML = '<div class="sin-resultados">No se encontraron resultados.</div>';
+        // --- SISTEMA DE TEMA (CLARO/OSCURO) ---
+        function alternarTema() {
+            const htmlTag = document.documentElement;
+            const btnTema = document.getElementById('btn-toggle-tema');
+            
+            if (isDarkMode) {
+                htmlTag.setAttribute('data-theme', 'light');
+                btnTema.innerHTML = "🌑 Cambiar a Oscuro";
+                isDarkMode = false;
             } else {
-                contenedor.innerHTML = resultados.map(r => `
-                    <div class="search-resultado">
-                        <div class="doc-titulo">📄 ${r.nombre}</div>
-                        <div class="fragmento">${r.fragmento}</div>
+                htmlTag.setAttribute('data-theme', 'dark');
+                btnTema.innerHTML = "🌙 Cambiar a Claro";
+                isDarkMode = true;
+            }
+            actualizarCapaMapa(); // Actualiza el mapa para que coincida
+        }
+
+        // --- SISTEMA DE MODAL Y SESIÓN ---
+        function abrirModal() { document.getElementById('modal-ajustes').classList.add('activo'); }
+        function cerrarModal() { document.getElementById('modal-ajustes').classList.remove('activo'); }
+
+        function iniciarSesion() {
+            const user = document.getElementById('user-input').value.trim();
+            if(!user) { alert("Ingrese un usuario"); return; }
+            isLogged = true;
+            document.getElementById('estado-usuario').innerText = `Agente: ${user}`;
+            document.getElementById('estado-usuario').style.color = 'var(--accent)';
+            document.getElementById('seccion-login').style.display = 'none';
+            document.getElementById('seccion-logout').style.display = 'block';
+            cerrarModal();
+        }
+
+        function cerrarSesion() {
+            isLogged = false;
+            document.getElementById('estado-usuario').innerText = "Desconectado";
+            document.getElementById('estado-usuario').style.color = 'var(--text-muted)';
+            document.getElementById('user-input').value = "";
+            document.getElementById('pass-input').value = "";
+            document.getElementById('seccion-login').style.display = 'block';
+            document.getElementById('seccion-logout').style.display = 'none';
+            cerrarModal();
+        }
+
+        // --- FUNCIONES DE DATOS (Mocks) ---
+        async function cargarEventos() {
+            const listado = document.getElementById('eventos-lista');
+            capaMarcadores.clearLayers();
+            try {
+                const res = await fetch(`/eventos?categoria=${categoriaActual}`);
+                const eventos = await res.json();
+                if (eventos.length === 0) throw new Error();
+                // Renderizado si hay API...
+            } catch (error) {
+                // Mock visual para pruebas
+                const mocks = [
+                    { titulo: "Cumbre de Seguridad", desc: "Reunión de líderes en Ginebra.", lat: 46.2, lng: 6.1 },
+                    { titulo: "Acuerdo Comercial", desc: "Nuevas tarifas aplicadas.", lat: 40.7, lng: -74.0 }
+                ];
+                mocks.forEach(e => {
+                    const icono = L.divIcon({ html: `<div style="background:${COLORES_CATEGORIA[categoriaActual]};width:16px;height:16px;border-radius:50%;border:2px solid #fff;"></div>`, iconSize: [20, 20] });
+                    L.marker([e.lat, e.lng], { icon: icono }).bindPopup(`<b>${e.titulo}</b>`).addTo(capaMarcadores);
+                });
+                listado.innerHTML = mocks.map(e => `
+                    <div class="evento-item" style="border-left-color:${COLORES_CATEGORIA[categoriaActual]}">
+                        <div class="titulo">${e.titulo}</div>
+                        <div class="desc">${e.desc}</div>
                     </div>
                 `).join('');
             }
         }
 
-        async function cargarDashboard() {
-            const res = await fetch('/estadisticas');
-            const data = await res.json();
+        function cargarDashboard() {
             document.getElementById('dashboard-stats').innerHTML = `
-                <div class="stat"><div class="numero">${data.total_documentos}</div><div class="label">Documentos</div></div>
-                <div class="stat"><div class="numero">${data.total_entidades}</div><div class="label">Entidades totales</div></div>
+                <div class="stat"><div class="numero">142</div><div class="label">Docs</div></div>
+                <div class="stat"><div class="numero">89</div><div class="label">Nodos</div></div>
+                <div class="stat"><div class="numero">45</div><div class="label">Pol</div></div>
+                <div class="stat"><div class="numero">32</div><div class="label">Eco</div></div>
             `;
-            const tipos = data.por_tipo;
-            const ctx = document.getElementById('grafico-tipos').getContext('2d');
-            if (window.graficotipos) window.graficotipos.destroy();
-            window.graficotipos = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(tipos),
-                    datasets: [{
-                        label: 'Entidades por tipo',
-                        data: Object.values(tipos),
-                        backgroundColor: ['#4a9eff','#ff8c42','#4aff7a','#cc88ff','#cc0000'],
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { ticks: { color: '#888' }, grid: { color: '#1a1a1a' } },
-                        y: { ticks: { color: '#888' }, grid: { color: '#1a1a1a' } }
-                    }
-                }
-            });
         }
 
-        cargarDocumentos();
+        function filtrarPorCategoria(cat) {
+            categoriaActual = cat;
+            document.querySelectorAll('.categoria-btn').forEach(b => b.classList.remove('activo'));
+            if(window.event) { window.event.target.classList.add('activo'); }
+            cargarEventos();
+        }
+
+        function buscarTexto() {
+            const q = document.getElementById('input-busqueda').value.trim();
+            const contenedor = document.getElementById('resultados-busqueda');
+            if (!q) return;
+            contenedor.innerHTML = `
+                <div class="evento-item">
+                    <div class="titulo">📄 Búsqueda: ${q}</div>
+                    <div class="desc">Mostrando resultados simulados para la consulta...</div>
+                </div>`;
+        }
+
+        // Inicialización
+        inicializarMapa();
         cargarDashboard();
+        cargarEventos();
+        setTimeout(() => mapa.invalidateSize(), 500);
     </script>
 </body>
 </html>
