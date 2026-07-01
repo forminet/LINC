@@ -1,0 +1,29 @@
+services:
+  # Base de datos de Grafos
+  neo4j:
+    image: neo4j:5.15-community
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/password123 # ¡Cambia esto después!
+    volumes:
+      - ./data/neo4j:/data
+
+  # Base de datos Relacional (Principal)
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=linc_admin
+      - POSTGRES_PASSWORD=linc_password
+      - POSTGRES_DB=linc_db
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  # Caché y mensajería
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
