@@ -6,11 +6,11 @@ services:
       - "7474:7474"
       - "7687:7687"
     environment:
-      - NEO4J_AUTH=neo4j/password123 # ¡Cambia esto después!
+      - NEO4J_AUTH=neo4j/password123
     volumes:
       - ./data/neo4j:/data
 
-  # Base de datos Relacional (Principal)
+  # Base de datos Relacional
   postgres:
     image: postgres:16-alpine
     ports:
@@ -22,8 +22,20 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
 
-  # Caché y mensajería
+  # Caché
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+
+  # Tu microservicio de API (Asegúrate de que esté bajo el mismo "services:")
+  api:
+    build: ./src/api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - neo4j
+      - postgres
+      - redis
+    volumes:
+      - ./src/api:/app
