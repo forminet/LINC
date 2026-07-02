@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from pypdf import PdfReader
 from database import Documento, Entidad, Evento, crear_tablas, get_db
 from buscador import crear_indice, agregar_documento, buscar
-from osint import recopilar_osint
 import io
 import os
 from datetime import datetime
@@ -97,13 +96,6 @@ def estadisticas(db: Session = Depends(get_db)):
         "por_categoria": por_categoria
     }
 
-@app.get("/osint")
-def obtener_osint(terminos: str):
-    from osint import recopilar_osint
-    lista_terminos = [t.strip() for t in terminos.split(",")]
-    resultado = recopilar_osint(lista_terminos)
-    return resultado
-
 @app.post("/eventos")
 def crear_evento(titulo: str, descripcion: str, categoria: str, latitud: str, longitud: str, severidad: int = 1, db: Session = Depends(get_db)):
     evento = Evento(
@@ -130,3 +122,9 @@ def listar_eventos(categoria: str = None, db: Session = Depends(get_db)):
 @app.get("/categorias")
 def get_categorias():
     return {"categorias": CATEGORIAS}
+
+@app.get("/noticias")
+def obtener_noticias(tema: str):
+    from osint_avanzado import buscar_noticias_google
+    noticias = buscar_noticias_google(tema)
+    return {"tema": tema, "cantidad": len(noticias), "noticias": noticias}
