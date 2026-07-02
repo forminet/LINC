@@ -7,3 +7,4 @@ requests==2.31.0
 beautifulsoup4==4.12.2
 whoosh==2.7.4
 feedparser==6.0.10
+Flask==3.0.0
